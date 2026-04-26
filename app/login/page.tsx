@@ -31,7 +31,7 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.verifyOtp({
       email,
-      token: code,
+      token: code.trim(),
       type: "email",
     });
     if (error) {
@@ -50,7 +50,7 @@ export default function LoginPage() {
         <p className="text-sm text-gray-600 mb-6">
           {step === "email"
             ? "Enter your email to sign in"
-            : "Enter the 6-digit code we sent you"}
+            : "Enter the code from your email"}
         </p>
 
         {step === "email" ? (
@@ -74,21 +74,26 @@ export default function LoginPage() {
           <>
             <input
               type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="123456"
-              maxLength={6}
+              onChange={(e) => setCode(e.target.value.replace(/\s+/g, ""))}
+              placeholder="Paste the code from email"
               className="w-full border rounded px-3 py-2 mb-4 font-mono text-center text-lg tracking-widest"
             />
             <button
               onClick={verifyCode}
-              disabled={loading || code.length !== 6}
+              disabled={loading || code.length < 6}
               className="w-full bg-black text-white py-2 rounded disabled:opacity-50 mb-2"
             >
               {loading ? "Verifying..." : "Verify"}
             </button>
             <button
-              onClick={() => setStep("email")}
+              onClick={() => {
+                setStep("email");
+                setCode("");
+                setError("");
+              }}
               className="w-full text-sm text-gray-600 py-2"
             >
               Use a different email
