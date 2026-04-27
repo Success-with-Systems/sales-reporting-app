@@ -28,9 +28,21 @@ const closerFields = [
 
 export default function SubmitForm({ profile }: { profile: any }) {
   const router = useRouter();
-  const [role, setRole] = useState<"setter" | "closer">(
-    profile?.agent_type === "closer" ? "closer" : "setter"
-  );
+
+  // Determine which roles this agent can submit as.
+  // - agent_type 'setter' → setter only
+  // - agent_type 'closer' → closer only
+  // - agent_type 'both' or null, or role manager/admin → can pick
+  const canPickRole =
+    !profile?.agent_type ||
+    profile.agent_type === "both" ||
+    profile.role === "manager" ||
+    profile.role === "admin";
+
+  const initialRole: "setter" | "closer" =
+    profile?.agent_type === "closer" ? "closer" : "setter";
+
+  const [role, setRole] = useState<"setter" | "closer">(initialRole);
   const [values, setValues] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -84,14 +96,22 @@ export default function SubmitForm({ profile }: { profile: any }) {
           </div>
           <div>
             <label className="block text-sm mb-1">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as any)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="setter">Setter</option>
-              <option value="closer">Closer</option>
-            </select>
+            {canPickRole ? (
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as any)}
+                className="w-full border rounded px-3 py-2"
+              >
+                <option value="setter">Setter</option>
+                <option value="closer">Closer</option>
+              </select>
+            ) : (
+              <input
+                value={role === "setter" ? "Setter" : "Closer"}
+                disabled
+                className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600"
+              />
+            )}
           </div>
         </div>
 
