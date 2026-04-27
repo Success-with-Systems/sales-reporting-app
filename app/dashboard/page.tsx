@@ -38,7 +38,6 @@ export default async function Dashboard({
   const to = searchParams?.to || today;
   const agentFilter = searchParams?.agent || "";
 
-  // Submissions query — RLS handles agent-vs-manager scoping at DB level.
   let q = supabase
     .from("submissions")
     .select("*, profiles(id, full_name, email, agent_type)")
@@ -53,7 +52,6 @@ export default async function Dashboard({
   const { data: submissions } = await q;
   const rows = submissions || [];
 
-  // Tenant agents (for the manager filter dropdown + leaderboard).
   let tenantAgents: any[] = [];
   if (isManager) {
     const { data } = await supabase
@@ -64,8 +62,7 @@ export default async function Dashboard({
     tenantAgents = data || [];
   }
 
-  // Aggregate totals.
-  const totals = rows.reduce(
+  const totals = (rows as any[]).reduce(
     (acc: any, s: any) => ({
       dials: acc.dials + (s.dials_done || 0),
       bookings: acc.bookings + (s.bookings_from_dials || 0),
@@ -77,10 +74,9 @@ export default async function Dashboard({
     { dials: 0, bookings: 0, consults: 0, offers: 0, sales: 0, submissions: 0 }
   );
 
-  // Per-agent leaderboard (managers only).
   const perAgent = new Map<string, any>();
   if (isManager) {
-    for (const s of rows) {
+    for (const s of rows as any[]) {
       const id = s.user_id;
       const cur = perAgent.get(id) || {
         id,
@@ -104,7 +100,16 @@ export default async function Dashboard({
   }
 
   const tenantName = (profile as any)?.tenants?.name || "";
-  const roleLabel = profile.role === "admin" ? "Admin" : profile.role === "manager" ? "Manager" : profile.agent_type === "closer" ? "Closer" : profile.agent_type === "setter" ? "Setter" : "Agent";
+  const roleLabel =
+    profile.role === "admin"
+      ? "Admin"
+      : profile.role === "manager"
+      ? "Manager"
+      : profile.agent_type === "closer"
+      ? "Closer"
+      : profile.agent_type === "setter"
+      ? "Setter"
+      : "Agent";
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -112,12 +117,15 @@ export default async function Dashboard({
         <div>
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-gray-600">
-            {tenantName ? tenantName + " \u00b7 " : ""}
-            {roleLabel} \u00b7 {user.email}
+            {tenantName ? tenantName + " · " : ""}
+            {roleLabel} · {user.email}
           </p>
         </div>
         <div className="flex gap-3">
-          <Link href="/submit" className="bg-black text-white px-4 py-2 rounded text-sm">
+          <Link
+            href="/submit"
+            className="bg-black text-white px-4 py-2 rounded text-sm"
+          >
             Submit numbers
           </Link>
           <form action="/auth/signout" method="post">
@@ -126,7 +134,10 @@ export default async function Dashboard({
         </div>
       </div>
 
-      <form method="get" className="bg-white p-4 rounded-lg shadow mb-6 flex flex-wrap gap-3 items-end">
+      <form
+        method="get"
+        className="bg-white p-4 rounded-lg shadow mb-6 flex flex-wrap gap-3 items-end"
+      >
         <div>
           <label className="block text-xs text-gray-600 mb-1">From</label>
           <input type="date" name="from" defaultValue={from} className="border rounded px-2 py-1 text-sm" />
@@ -182,7 +193,7 @@ export default async function Dashboard({
                 .map((a: any) => (
                   <tr key={a.id} className="border-t">
                     <td className="px-6 py-3">{a.name}</td>
-                    <td className="px-6 py-3 capitalize">{a.agent_type || \"\u2014\"}</td>
+                    <td className="px-6 py-3 capitalize">{a.agent_type || "—"}</td>
                     <td className="px-6 py-3">{a.submissions}</td>
                     <td className="px-6 py-3">{a.dials}</td>
                     <td className="px-6 py-3">{a.bookings}</td>
@@ -212,7 +223,7 @@ export default async function Dashboard({
               </tr>
             </thead>
             <tbody>
-              {rows.map((s: any) => (
+              {(rows as any[]).map((s) => (
                 <tr key={s.id} className="border-t">
                   <td className="px-6 py-3">{s.date}</td>
                   {isManager && (
